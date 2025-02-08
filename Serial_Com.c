@@ -78,10 +78,20 @@ void callback_button(uint gpio, uint32_t events) {
         if (gpio == BOTAO_A) {  // Verifica se o botão A foi pressionado
             GREEN_LED_OFF = !GREEN_LED_OFF; // Inverte o estado do LED verde
             gpio_put(LED_PIN_GREEN, GREEN_LED_OFF);  // Acende o LED verde
+                    if (GREEN_LED_OFF == false){
+                        printf("LED verde ligado\n");
+                    } else {
+                        printf("LED verde desligado\n");
+                    }
+            
         } else if (gpio == BOTAO_B) { // Verifica se o botão B foi pressionado
             BLUE_LED_OFF = !BLUE_LED_OFF; // Inverte o estado do LED azul
             gpio_put(LED_PIN_BLUE, BLUE_LED_OFF);  // Acende o LED verde
-           
+                    if (BLUE_LED_OFF == false){
+                            printf("LED azul ligado\n");
+                        } else {
+                            printf("LED azul desligado\n");
+                        }
         }
     }
 }
