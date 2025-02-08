@@ -63,12 +63,85 @@ uint matrix_rgb(float r, float g, float b){
   
 
 //NUMEROS PARA EXIBIR NA MATRIZ DE LED
+
+double numero0[25] = {    //Número 0
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 1.0, 0.0, 1.0,
+    1.0, 1.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0};
+
+double numero1[25] = {    //Número 1
+    0.0, 1.0, 1.0, 1.0, 0.0,
+    0.0, 0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0, 0.0,
+    0.0, 1.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0, 0.0};
+  
+double numero2[25] = {    //Número 2
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 0.0,
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    0.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0};
+
+double numero3[25] = {    //Número 3
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    0.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    0.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0};
+
+double numero4[25] = {    //Número 4
+    1.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 1.0};
+  
+double numero5[25] = {    //Número 5
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    0.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 0.0,
+    1.0, 1.0, 1.0, 1.0, 1.0};
+
+double numero6[25] = {    //Número 6
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 0.0,
+    1.0, 1.0, 1.0, 1.0, 1.0};
+
+double numero7[25] = {    //Número 7
+    1.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0};
+
+double numero8[25] = {    //Número 8
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0};
+
+double numero9[25] = {    //Número 9
+    1.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0};
+
 double apagar_leds[25] ={   //Apagar LEDs da matriz
     0.0, 0.0, 0.0, 0.0, 0.0,          
     0.0, 0.0, 0.0, 0.0, 0.0, 
     0.0, 0.0, 0.0, 0.0, 0.0,
     0.0, 0.0, 0.0, 0.0, 0.0,
     0.0, 0.0, 0.0, 0.0, 0.0};
+
+double *numeros[11] = {numero0, numero1, numero2, numero3, numero4, numero5, numero6, numero7, numero8, numero9, apagar_leds};  // Vetor com os números
 
 
 void callback_button(uint gpio, uint32_t events) {
@@ -102,6 +175,7 @@ int main(){
     float r, g, b;   // Variáveis para controlar a intensidade de cada cor
     pio = pio0; // Seleciona a PIO 0
     uint32_t valor_led = 0; // Inicializa com preto (todos os LEDs apagados)
+    char c; // Variável para armazenar o caractere recebido no monitor serial
 
     frequenciaClock = set_sys_clock_khz(128000, false); // Configura a frequência do clock para 128 MHz
     stdio_init_all(); 
@@ -141,6 +215,17 @@ int main(){
       gpio_set_irq_enabled_with_callback(BOTAO_B, GPIO_IRQ_EDGE_FALL, true, &callback_button);  
 
     while (true) {
+       if (scanf("%c", &c) == 1){
+        printf("Caractere recebido: %c\n", c);
+        int numero = c - '0'; // Converte o caractere para um número inteiro
+
+                if (numero >= 0 && numero <= 9) { // Verifica se é um número de 0 a 9
+                    desenho_pio(numeros[numero], valor_led, pio, sm, 0.3, 0.3, 0.3); // Exibe o número na matriz
+                } else {
+                    desenho_pio(apagar_leds, valor_led, pio, sm, 0.3, 0.3, 0.3); // Limpa a matriz se não for um número
+                    printf("Caractere inválido!\n");
+                }
        
     }
+ }
 }
