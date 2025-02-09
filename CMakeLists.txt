@@ -30,40 +30,38 @@ include(pico_sdk_import.cmake)
 
 project(Serial_Com C CXX ASM)
 
+
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Serial_Com Serial_Com.c )
+add_executable(Serial_Com Serial_Com.c)
 
 pico_set_program_name(Serial_Com "Serial_Com")
 pico_set_program_version(Serial_Com "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(Serial_Com 0)
+pico_enable_stdio_uart(Serial_Com 1)
 pico_enable_stdio_usb(Serial_Com 1)
 
 pico_generate_pio_header(Serial_Com ${CMAKE_CURRENT_LIST_DIR}/Serial_Com.pio)
 
-target_sources(Serial_Com PRIVATE Serial_Com.c)
+target_sources(Serial_Com PRIVATE Serial_Com.c inc/ssd1306.c)
 # Add the standard library to the build
 target_link_libraries(Serial_Com
         pico_stdlib
         hardware_pio
-        pico_bootrom
-        hardware_pwm)
+        hardware_i2c
+        hardware_uart
+        hardware_clocks
+)
 
 # Add the standard include files to the build
 target_include_directories(Serial_Com PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
+        ${CMAKE_CURRENT_LIST_DIR}/inc
 )
-
-# Add any user requested libraries
-target_link_libraries(Serial_Com 
-        hardware_i2c
-        
-        )
 
 pico_add_extra_outputs(Serial_Com)
 
