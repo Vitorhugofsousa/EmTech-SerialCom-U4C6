@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
-#include "hardware/pwm.h"
-#include "hardware/clocks.h"
-#include "pico/bootrom.h"
 #include "hardware/i2c.h"
+#include "hardware/uart.h"
+#include "hardware/clocks.h"
 #include "Serial_Com.pio.h"
-
+#include "inc/font.h"
+#include "inc/ssd1306.h"
 
 #define LED_PIN_GREEN 11 //led verde
 #define LED_PIN_BLUE 12 //led azul
@@ -15,9 +15,10 @@
 #define LED_PIN 7 //pino de saída da matriz de led
 #define BOTAO_A 5 //pino saida botao a
 #define BOTAO_B 6 //pino saida botao b
-#define I2C_PORT i2c0
+#define I2C_PORT i2c1
 #define I2C_SDA 14  
 #define I2C_SCL 15
+#define display_address 0x3C
 
 //VARIÁVEIS GLOBAIS
 int static volatile indice = 0; //variável para countrole do índice da matriz de led
@@ -26,9 +27,12 @@ uint actual_time = 0; //variável para countrole do tempo
 uint valor_led; //variável para countrole do valor do led
 uint sm;  //variável para countrole do state machine
 PIO pio = pio0;  //variável para countrole da pio
+ssd1306_t ssd;  //variável para countrole do display
 bool GREEN_LED_OFF = false;
 bool BLUE_LED_OFF = false;
 bool RED_LED_OFF = false;
+double r = 0.3, g = 0.3, b = 0.3;  // Variáveis para controlar a intensidade de cada cor
+int numero_anterior = -1; // Variável para armazenar o número anterior
 
 // MATRIZ DE LEDS
 // ROTINA PARA DEFINIÇÃO DA INTENSIDADE DE CORES DO LED
@@ -53,13 +57,12 @@ uint matrix_rgb(float r, float g, float b){
   
   
   // FUNCAO PARA DESENHAR A MATRIZ
-  void desenho_pio(double *desenho, uint32_t valor_led, PIO pio, uint sm, double r, double g, double b){
-    for (int16_t i = 0; i < NUM_PIXELS; i++)  // Percorre todos os LEDs da matriz
-    {
-      valor_led = matrix_rgb(desenho[i] * r, desenho[i] * g, desenho[i] * b); // Define a intensidade de cada cor
-      pio_sm_put_blocking(pio, sm, valor_led);  // Atualiza o valor do LED
-    };
-  }
+  void desenho_pio(double *desenho, uint32_t valor_led, PIO pio, uint sm, double r, double g, double b) {
+    for (int16_t i = 0; i < NUM_PIXELS; i++) {
+        valor_led = matrix_rgb(desenho[i] * r, desenho[i] * g, desenho[i] * b);
+        pio_sm_put_blocking(pio, sm, valor_led);
+    }
+}
   
 
 //NUMEROS PARA EXIBIR NA MATRIZ DE LED
@@ -152,6 +155,7 @@ void callback_button(uint gpio, uint32_t events) {
             GREEN_LED_OFF = !GREEN_LED_OFF; // Inverte o estado do LED verde
             gpio_put(LED_PIN_GREEN, GREEN_LED_OFF);  // Acende o LED verde
                     if (GREEN_LED_OFF == false){
+                        
                         printf("LED verde desligado\n");
                     } else {
                         printf("LED verde ligado\n");
@@ -166,16 +170,25 @@ void callback_button(uint gpio, uint32_t events) {
                             printf("LED azul ligado\n");
                         }
         }
+
     }
+    ssd1306_fill(&ssd, false); // Limpa o display
+    // Imprime estado atual dos leds no display
+    gpio_get(LED_PIN_GREEN) ? ssd1306_draw_string(&ssd, "LED Verde ON", 10, 10) :
+                             ssd1306_draw_string(&ssd, "LED Verde OFF", 10, 10);
+    gpio_get(LED_PIN_BLUE) ? ssd1306_draw_string(&ssd, "LED Azul ON", 10, 30) :
+                            ssd1306_draw_string(&ssd, "LED Azul OFF", 10, 30);
+    ssd1306_send_data(&ssd); // Atualiza o display
 }
 
 int main(){
     bool frequenciaClock; // Variável para verificar se a frequência do clock foi configurada corretamente
     uint16_t i; // Variável para controlar o loop
-    float r, g, b;   // Variáveis para controlar a intensidade de cada cor
+
     pio = pio0; // Seleciona a PIO 0
     uint32_t valor_led = 0; // Inicializa com preto (todos os LEDs apagados)
     char c; // Variável para armazenar o caractere recebido no monitor serial
+   
 
     frequenciaClock = set_sys_clock_khz(128000, false); // Configura a frequência do clock para 128 MHz
     stdio_init_all(); 
@@ -196,6 +209,20 @@ int main(){
     gpio_put(GREEN_LED_OFF, false);
     gpio_put(BLUE_LED_OFF, false);
     gpio_put(RED_LED_OFF, false);
+    
+
+    i2c_init(I2C_PORT, 400 * 1000);
+    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C); 
+    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C); 
+    gpio_pull_up(I2C_SDA); 
+    gpio_pull_up(I2C_SCL); 
+    ssd.i2c_port = I2C_PORT;
+    ssd.address = display_address;
+    ssd.width = 128;
+    ssd.height = 64;
+    ssd.external_vcc = false;
+    ssd1306_init(&ssd, 128, 64, false, display_address, I2C_PORT);
+    ssd1306_config(&ssd);
 
     printf("iniciando a transmissão PIO");
     if (frequenciaClock){
@@ -215,17 +242,26 @@ int main(){
       gpio_set_irq_enabled_with_callback(BOTAO_B, GPIO_IRQ_EDGE_FALL, true, &callback_button);  
 
     while (true) {
-       if (scanf("%c", &c) == 1){
-        printf("Caractere recebido: %c\n", c);
-        int numero = c - '0'; // Converte o caractere para um número inteiro
+        int c = getchar_timeout_us(0); // Verifica se há caractere disponível sem bloquear
 
-                if (numero >= 0 && numero <= 9) { // Verifica se é um número de 0 a 9
-                    desenho_pio(numeros[numero], valor_led, pio, sm, 0.3, 0.3, 0.3); // Exibe o número na matriz
+        if (c != PICO_ERROR_TIMEOUT) { // Se um caractere foi recebido
+            printf("Caractere recebido: %c\n", (char)c);
+            int numero = c - '0';
+
+            ssd1306_fill(&ssd, false);
+            ssd1306_draw_char(&ssd, (char)c, 20, 30); // Usando ssd1306_draw_char
+            ssd1306_send_data(&ssd);
+            
+            if (numero != numero_anterior) {
+                numero_anterior = numero;
+
+                if (numero >= 0 && numero <= 9) {
+                    desenho_pio(numeros[numero], valor_led, pio, sm, r, g, b);
                 } else {
-                    desenho_pio(apagar_leds, valor_led, pio, sm, 0.3, 0.3, 0.3); // Limpa a matriz se não for um número
+                    desenho_pio(apagar_leds, valor_led, pio, sm, r, g, b);
                     printf("Caractere inválido!\n");
                 }
-       
+            }
+        }
     }
- }
 }
