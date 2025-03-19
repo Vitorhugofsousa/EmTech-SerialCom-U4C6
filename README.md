@@ -33,8 +33,5 @@ O programa desenvolvido neste repositório tem como objetivo principal aplicar t
 * Abra o aplicativo __PUTTY__ e utilize as mesmas configurações do video de demonstração, em seguida selecione "Open"
 * Digite o caractere desejado e o veja aparecendo no display, caso selecione um numero ele sera exibido na matriz de LED's também
 
-## Demonstração do código
-Ao clicar __[Aqui](https://youtu.be/vPDG-nOv0cQ)__ verá um vídeo no __YouTube__ explicando o funcionamento completo do Código.
-
 # Contribuições
 <img src="serial_com_banner.png">
